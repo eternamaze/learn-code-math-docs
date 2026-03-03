@@ -64,33 +64,23 @@ struct InstrumentSpec {
 
 ```rust
 // 正范式：能力优先
-trait Tradeable      { fn pair(&self) -> &AssetPair; }
-trait Positionable  : Tradeable {}   // 有活头寸（可平仓、有方向性敞口）
-trait Margined      : Tradeable {}   // 有保证金机制（抵押品、强平）
+trait Tradeable    { fn pair(&self) -> &AssetPair; }
+trait Margined     : Tradeable {}
 trait FundingBearing: Tradeable {}
-trait Expiring      : Tradeable { fn expiry(&self) -> Timestamp; }
-trait Strikeable    : Expiring  { fn strike_price(&self) -> Decimal; fn option_kind(&self) -> OptionKind; }
+trait Expiring     : Tradeable { fn expiry(&self) -> Timestamp; }
+trait Strikeable   : Expiring  { fn strike_price(&self) -> Decimal; fn option_kind(&self) -> OptionKind; }
 
-// Position 和 Margined 是正交能力：
-//
-//                  ¬Margined              Margined
-//   ¬Positionable  Cash Spot              Collateral Lending
-//    Positionable  Cash Equity / Option买方  Perpetual / Future
-//
-// 杠杆 l = N/M 是 Margined 的内禀属性，不是 Positionable 的。
-// 无保证金 → 无杠杆（不是 l=1，而是 l 不存在）。
-// 现金股票有仓位但没有杠杆——因为全额付款，无保证金机制。
+// 杠杆 l 是通用量——l=1（现货全额）是平凡值而非"空"，不是类型判别式
+// 保证金才是真正的类型判别式：纯现货不存在抵押品/强平等概念
 
 // "Spot" 只是 {Tradeable} 这个能力集合的名字
 struct Spot { pair: AssetPair }
 impl Tradeable for Spot { ... }
-// Spot 不实现 Positionable —— 纯现货只是现金互换
-// Spot 不实现 Margined —— 即时全额结算
+// Spot 不实现 Margined —— 纯现货没有保证金机制
 
-// "Perpetual" 只是 {Tradeable, Positionable, Margined, FundingBearing} 的名字
+// "Perpetual" 只是 {Tradeable, Margined, FundingBearing} 的名字
 struct Perpetual { pair: AssetPair }
 impl Tradeable for Perpetual { ... }
-impl Positionable for Perpetual {}
 impl Margined for Perpetual {}
 impl FundingBearing for Perpetual {}
 ```
@@ -138,18 +128,13 @@ $$\text{Option}\langle A \rangle = 1 + A \quad \neq \quad \text{概念 } A \text
 
 一种常见的反模式是将较简单的实体视为较复杂实体的退化情形：
 
-> "现货就是无仓位、无保证金、无资金费率的永续合约"
+> "现货就是杠杆=1、无仓位、无资金费率的永续合约"
 
 这在值层面看似合理，但在类型层面是一个**升维嵌入谬误**——把低维对象嵌入高维空间只为了在高维空间中统一处理，然后在高维空间中对某些维度取零或 None。
 
-$$\text{Spot} \hookrightarrow \text{Perpetual}|_{\text{position}=\varnothing,\ \text{leverage}=1,\ \text{funding}=0,\ \text{margin}=\varnothing}$$
+$$\text{Spot} \hookrightarrow \text{Perpetual}|_{\text{leverage}=1,\ \text{funding}=0,\ \text{margin}=\varnothing}$$
 
 问题在于：嵌入之后，类型系统看到的是 `Perpetual`，它具备所有永续合约的能力。你可以调用 `set_leverage(spot_as_perp, 10)`，编译通过，运行时炸裂。
-
-特别注意**杠杆**的情况：杠杆 $l = N/M$ 是仓位名义面值与实际占用保证金面值的倍率。
-无保证金 → $M$ 不存在 → $l$ 不存在（不是 $l=1$）。
-全额付款的现金股票有仓位但无杠杆——因为没有保证金机制，倍率的分母不存在。
-$l=1$ 的保证金仓位和无杠杆概念的仓位是两种完全不同的东西，不能用同一个值表达。
 
 **正确的做法是**：不嵌入。Spot 就是 Spot，它的能力集合就是 $\lbrace\text{Tradeable}\rbrace$。它不是退化的 Perpetual，因为它的能力集合是 Perpetual 能力集合的真子集——在范畴论中，这两个对象不同构。
 
@@ -221,7 +206,7 @@ $$\text{fn } f(x: \&\text{impl } A + B + C) \quad \text{而非} \quad \text{fn }
 | 反模式 | 症状 | 修复 |
 |--------|------|------|
 | Option 地狱 | struct 中多个 `Option` 字段在某些变体下永远是 `None` | 拆成 ADT，每个变体只含有意义的字段 |
-| 升维嵌入 | 简单实体被视为复杂实体的退化；杠杆、仓位维度取零或 None | 保持类型独立，不嵌入；无保证金 → 杠杆不存在（非 l=1） |
+| 升维嵌入 | 简单实体被视为复杂实体的退化；`leverage = 1` 表示"无杠杆" | 保持类型独立，不嵌入 |
 | 上帝 trait | 单个 trait 包含所有操作，部分实现返回 `NotSupported` | 拆成原子能力 trait |
 | 运行时类型检查 | `match instrument.kind { Spot => Err(NotSupported) }` | 用 trait bound 在编译期拒绝 |
 | 标签分发 | 根据 `kind` 字段决定执行路径 | 用 enum match 或 trait 动态分发 |
