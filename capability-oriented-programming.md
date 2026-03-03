@@ -56,7 +56,7 @@ struct InstrumentSpec {
 基于能力的思维路径是**能力优先**：
 
 ```
-先定义原子能力（Leveraged, Margined, FundingBearing, Expiring, ...）
+先定义原子能力（Margined, FundingBearing, Expiring, ...）
   → 每种实体是一组能力的交集
     → 名字只是这个交集的简称
       → 每个实体恰好只携带它需要的数据
@@ -65,21 +65,22 @@ struct InstrumentSpec {
 ```rust
 // 正范式：能力优先
 trait Tradeable    { fn pair(&self) -> &AssetPair; }
-trait Leveraged    : Tradeable {}
 trait Margined     : Tradeable {}
 trait FundingBearing: Tradeable {}
 trait Expiring     : Tradeable { fn expiry(&self) -> Timestamp; }
 trait Strikeable   : Expiring  { fn strike_price(&self) -> Decimal; fn option_kind(&self) -> OptionKind; }
 
+// 杠杆 l 是通用量——l=1（现货全额）是平凡值而非"空"，不是类型判别式
+// 保证金才是真正的类型判别式：纯现货不存在抵押品/强平等概念
+
 // "Spot" 只是 {Tradeable} 这个能力集合的名字
 struct Spot { pair: AssetPair }
 impl Tradeable for Spot { ... }
-// Spot 不实现 Leveraged —— 不是"杠杆为 1"，是"杠杆概念不存在"
+// Spot 不实现 Margined —— 纯现货没有保证金机制
 
-// "Perpetual" 只是 {Tradeable, Leveraged, Margined, FundingBearing} 的名字
+// "Perpetual" 只是 {Tradeable, Margined, FundingBearing} 的名字
 struct Perpetual { pair: AssetPair }
 impl Tradeable for Perpetual { ... }
-impl Leveraged for Perpetual {}
 impl Margined for Perpetual {}
 impl FundingBearing for Perpetual {}
 ```
@@ -104,7 +105,7 @@ $$\text{一个对象完全由它接受的态射（能力）决定。}$$
 
 $$X \cong \text{Hom}(-, X)$$
 
-一个金融工具**是什么**，完全等价于**其他东西能对它做什么**。现货就是那些"只能进行可交易操作"的东西；永续合约就是那些"能进行可交易、可杠杆、可保证金、有资金费率操作"的东西。
+一个金融工具**是什么**，完全等价于**其他东西能对它做什么**。现货就是那些"只能进行可交易操作"的东西；永续合约就是那些"能进行可交易、有保证金、有资金费率操作"的东西。
 
 ---
 
