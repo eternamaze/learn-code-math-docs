@@ -1,6 +1,6 @@
-# 双路因果对账
+# 双路因果印证
 
-> Dual-Path Causal Reconciliation
+> Dual-Path Causal Corroboration
 
 ## 问题
 
@@ -21,11 +21,11 @@
 
 ---
 
-## 法则一：对账公理
+## 法则一：印证公理
 
 独立于状态机的纯比较判定：
 
-$$\text{reconcile} : \text{Option}\ T \to \text{Option}\ T \to \text{Reconciled}\ T$$
+$$\text{corroborate} : \text{Option}\ T \to \text{Option}\ T \to \text{Corroborated}\ T$$
 
 | 推理路径 | 直接路径 | 行为 |
 |----------|----------|------|
@@ -34,7 +34,7 @@ $$\text{reconcile} : \text{Option}\ T \to \text{Option}\ T \to \text{Reconciled}
 | none | some B | 接受 B |
 | none | none | 不动 |
 
-无状态，仅需 $T$ 上的相等性。降级是四格矩阵的自然分支。
+无状态，仅需 $T$ 上的相等性。仅一路有值时接受该路是四格矩阵的自然分支。
 
 ---
 
@@ -67,7 +67,7 @@ Effect 是因果律的核心类型——derive 的输出。每个效应声明自
 1. **直接看见**：主端报告的范式片段直接写入 State
 2. **推理看见**：从 Cause 经 derive 归约，直到所有分支到达 stasis
 
-对账 = `reconcile(推理出的范式, 直接看见的范式)`。
+印证 = `corroborate(推理出的范式, 直接看见的范式)`。
 
 ### derive
 
@@ -150,7 +150,8 @@ derive 的类型签名不含 State 输出——实现者**不能直接产出 Sta
 |------|------|
 | 二元性 | 动（Cause）与静（State）是内禀属性，不取决于消费者 |
 | 分离性 | 法则一独立；法则二引用法则一，反之不成立 |
-| 降级性 | derive 返回 none → 法则一自然回退到直接路径 |
+| 单路性 | 仅一路有值时直接接受，是四格矩阵的自然分支，不是回退或降级 |
+| 矛盾性 | 因存在但推导失败是逻辑矛盾，必须显式报错（不得静默回退到直接路径） |
 | 线性性 | Cause 被独占消费，共享需求由先行分叉消解 |
 | 分叉性 | derive 产出 List Effect，因果结构是树 |
 | 片段性 | 叶子 = stasis(Patch)，分片是分叉的本体论后果 |

@@ -42,23 +42,11 @@ $$\text{投入精力的正确分布}:\ \phi > \psi \gg \gamma$$
 
 $$\text{Reality} \xrightarrow[\text{有损}]{\alpha} \text{自然语言需求} \xrightarrow[\text{歧义}]{\beta} \text{代码}$$
 
-- $\alpha$ 有损——自然语言无法精确表达量化关系、边界条件和不变量
-- $\beta$ 歧义——相同自然语言被不同开发者解读为不同代码
-
-| 维度 | 自然语言需求文档 | 数学建模 |
-|------|----------------|----------|
-| 精确性 | "用户可以处于活跃或冻结状态" | $\text{State} = \lbrace\text{Active}, \text{Frozen}\rbrace$, $\lvert\text{State}\rvert = 2$, 穷举可验证 |
-| 完备性 | 隐含假设遍布 | 公理显式声明，推论可验证 |
-| 边界条件 | 常被遗漏 | 函数定义域/值域强制覆盖 |
-| 可组合性 | 段落无法组合 | 类型可代数组合：$A \times B$, $A + B$, $A \to B$ |
-| 可验证性 | 人工审查 | 编译器 + 穷举检查 |
-| 可重用性 | 复制粘贴 | 参数化多态（泛型） |
-
-**数学公式的信噪比远高于文本描述。**
+自然语言无法精确表达量化关系、边界条件和不变量，且不同开发者解读不同。数学公式的信噪比远高于文本：
 
 $$\text{Request} = \text{Target} \times \text{Action} \times \text{Quantity} \times \text{Price}?$$
 
-这一行公式精确编码了请求的完整结构。等价的自然语言需要一个段落，且仍然可能产生歧义。
+这一行精确编码了请求的完整结构。等价自然语言需要一段，且仍可能歧义。
 
 ---
 
@@ -150,79 +138,21 @@ $$\text{NonEmptyList}(T) \ne \text{List}(T)$$
 
 ## §5 验证的数学结构
 
-### 类型即定理
+类型签名是定理陈述，编译通过是证明。例如 $f : \text{NonEmptyList}(A) \to A$ 断言“对任何非空列表总能取出元素”。
 
-类型签名是定理陈述。编译通过是定理证明。
-
-$$f : \text{NonEmptyList}(A) \to A$$
-
-这个签名断言："对于任何非空列表，总能取出一个元素。"编译通过意味着该定理成立。
-
-### 测试即抽样验证
-
-当类型系统无法完全编码某个性质时，测试是最后的手段：
-
-$$\forall x \in A.\ P(f(x)) \quad \text{（全称命题——理想中由类型保证）}$$
-
-$$\exists S \subseteq A.\ \forall x \in S.\ P(f(x)) \quad \text{（抽样命题——由测试验证有限子集）}$$
-
-**目标**：最大化类型系统能证明的命题范围，最小化需要测试的命题范围。
-
-### 测试的代数结构
-
-$$\text{Test} = \text{Precondition} \times \text{Action} \times \text{Postcondition}$$
-
-$$\text{Verdict} = \text{Pass}(\text{Evidence}) + \text{Fail}(\text{Evidence}) + \text{Skip}(\text{Reason})$$
-
-$$\text{Suite} = [\text{Test}] \times \text{ExecutionPolicy}$$
-
-$$\text{run} : \text{Suite} \to \text{Report}$$
-
-其中 $\text{Report} = \text{Stats} \times [\text{Verdict}]$。测试本身也有代数结构，不是随意编写的脚本。
+当类型系统无法完全编码某个性质时，测试是最后手段——抽样验证代替全称命题。
+**目标**：最大化类型能证明的命题，最小化需要测试的命题。
 
 ---
 
 ## §6 实践原则
 
-### 原则 1: 先写数学模型，再写代码
-
-$$\text{Model} \succ \text{Code}$$
-
-在 IDE 中敲第一行之前，先在纸上或文档中写出类型的代数定义。代码是数学模型的翻译结果，翻译是机械的。
-
-### 原则 2: 数学公式先于自然语言注释
-
-当需要解释一段代码时，先尝试用数学公式表述。如果数学公式简洁清晰，用它替代自然语言注释。
-
-$$\text{resolve} : \text{Intent} \to \text{Result}(\text{Target}, \text{Error})$$
-
-这一行比"该函数接收一个意图对象，解析后返回目标或错误"更精确、更紧凑。
-
-### 原则 3: 编译错误优于运行时错误
-
-$$\text{compile-time error} \succ \text{runtime error} \succ \text{silent wrong behavior}$$
-
-每一个运行时错误都意味着类型系统有未覆盖的空间。第一反应不是"加个 catch"，而是"类型系统为什么没拦截这个"。
-
-### 原则 4: 穷举优于条件分支
-
-穷举匹配比条件链更安全——编译器保证不遗漏变体。每当写 `if-else` 时，先问：**这是否应该是和类型上的穷举匹配？**
-
-### 原则 5: 代数恒等式指导重构
-
-当感觉代码冗余时，检查是否违反了代数恒等式。恒等式违反 = 结构性冗余。
-
-$$f \cong g \wedge f \ne g \implies \text{DRY 违规——合并为参数化的 } h(T)$$
-
-### 原则 6: 势分析指导设计
-
-当一个类型能表达的值的数量远大于域中合法值的数量时，类型设计过于宽松：
-
-$$\lvert\text{Type}\rvert \gg \lvert\text{Domain}\rvert \implies \text{存在非法状态可被构造}$$
-
-目标是：
-
-$$\lvert\text{Type}\rvert = \lvert\text{Domain}\rvert$$
+1. **先写数学模型，再写代码**：在 IDE 中敲第一行前，先写出类型的代数定义。代码是翻译结果，翻译是机械的。
+2. **数学公式先于自然语言注释**：$\text{resolve} : \text{Intent} \to \text{Result}(\text{Target}, \text{Error})$ 比一段文字描述更精确、更紧凑。
+3. **编译错误优于运行时错误**：运行时错误意味着类型系统有未覆盖的空间。
+4. **穷举优于条件分支**：编译器保证不遗漏变体。`if-else` 应先问：这是否应是和类型的穷举匹配？
+5. **代数恒等式指导重构**：$f \cong g \wedge f \ne g \implies$ DRY 违规。
+6. **势分析指导设计**：$|\text{Type}| \gg |\text{Domain}|$ 意味着存在可构造的非法状态。目标：$|\text{Type}| = |\text{Domain}|$。
 
 ---
 
