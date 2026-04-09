@@ -24,7 +24,7 @@
 | [formal-diagnostics.md](formal-diagnostics.md) | 怎么系统地审计代码质量？ | 用形式化诊断谓词替代直觉——让审计可复现 |
 | [category-theory-intuition.md](category-theory-intuition.md) | 更高阶的抽象推理工具？ | 范畴论提供"最优抽象"的判定标准——不多不少 || [capability-oriented-programming.md](capability-oriented-programming.md) | 能力和身份是什么关系？ | 能力的组合决定身份——名字只是能力集合的简称 |
 | [programming-as-algebra.md](programming-as-algebra.md) | 编程的尽头是什么？ | 程序建模是发现领域中已存在的代数结构——知识地图与搜索关键词 |
-| [dual-path-corroboration.md](dual-path-corroboration.md) | 主从状态机怎么同步？ | 因果印证法则是独立的比较公理，状态机法则引用它做双路验证 |
+| [dual-path-corroboration.md](dual-path-corroboration.md) | 主从状态机怎么同步？ | 赋值印证法则是独立的比较公理，归约律引用它做双路验证 |
 ## 设计原则
 
 - **领域无关**：不涉及任何具体业务领域（金融、游戏、Web……）
